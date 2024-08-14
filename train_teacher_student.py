@@ -22,6 +22,14 @@ from datamodules import ArgoverseV2DataModule
 from predictors import QCNet
 import wandb
 from pytorch_lightning.loggers import WandbLogger
+from self_distillation.teacher_student import TeacherStudent
+
+from self_distillation.utils import get_date
+from self_distillation.print_color import *
+
+import self_distillation.augment as augment
+import self_distillation.mask as mask
+from self_distillation.viz import *
 
 
 if __name__ == '__main__':
@@ -46,29 +54,61 @@ if __name__ == '__main__':
     parser.add_argument('--devices', type=int, required=True)
     parser.add_argument('--max_epochs', type=int, default=64)
     parser.add_argument('--wandb', type=bool, default=False)
+    parser.add_argument('--n', type=str, default=get_date())        # Run name
+
 
     QCNet.add_model_specific_args(parser)
     args = parser.parse_args()
 
-    model = QCNet(**vars(args))
+    # backbone_model = QCNet(**vars(args))
     
-    if args.wandb:
-        wandb.login()
-        wandb_logger = WandbLogger(project='QCNet', name="test5")
-    else:
-        wandb_logger = None
-
-    model = QCNet.load_from_checkpoint('/home/x_shage/QCNet/lightning_logs/version_0/checkpoints/epoch=33-step=212432.ckpt')
+    # # WANDB
+    # if args.wandb:
+    #     wandb.login()
+    #     wandb_logger = WandbLogger(project='QCNet', name=args.n)
+    # else:
+    #     wandb_logger = None
 
     datamodule = {
         'argoverse_v2': ArgoverseV2DataModule,
     }[args.dataset](**vars(args))
+
+    # #! Only during debugging
+    datamodule.setup()
+    dataloader = datamodule.train_dataloader()
+    batch = next(iter(dataloader))
+    input_data = batch[0]
+
+    # plot_traj_from_tensor(input_data)
+
+    # input_data = augment.flip(input_data)
+    masked_input = mask.mask_scenario(input_data)
+    plot_scenario(masked_input, name="mask_test")
+
+    # plot_traj_from_tensor(input_data, name="mask")
+
+
+    # pc(input_data['agent']['predict_mask'][:,:50])
+    # pc(input_data['agent']['predict_mask'][:,50:], c = "b")
+
+    # pc("#####", c="g")
+    # pc(input_data['agent']['valid_mask'][:,:50])
+    # pc(input_data['agent']['valid_mask'][:,50:], c = "b")
+    
+
+    exit()
+    # #! -----------
+
     model_checkpoint = ModelCheckpoint(monitor='val_minFDE', save_top_k=5, mode='min')
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    
+    teacher_student_model = TeacherStudent(backbone_model, vars(args))
+    
     trainer = pl.Trainer(accelerator=args.accelerator, devices=args.devices,
                          strategy=DDPStrategy(find_unused_parameters=False, gradient_as_bucket_view=True),
                          callbacks=[model_checkpoint, lr_monitor], max_epochs=args.max_epochs, logger=wandb_logger)
-    trainer.fit(model, datamodule)
+
+    trainer.fit(teacher_student_model, datamodule)
 
     wandb.finish() if args.wandb else None
 

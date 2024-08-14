@@ -1,3 +1,8 @@
+fig/
+wandb/
+QCNet/
+av2-api/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

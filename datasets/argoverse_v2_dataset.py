@@ -42,7 +42,6 @@ except ImportError:
     Polyline = object
     read_json_file = object
 
-
 class ArgoverseV2Dataset(Dataset):
     """Dataset class for Argoverse 2 Motion Forecasting Dataset.
 

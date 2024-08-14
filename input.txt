@@ -1,0 +1,39 @@
+HeteroData(
+  scenario_id='4d17509c-0af1-4bda-8a03-c81dca7da06f',
+  city='miami',
+  agent={
+    av_index=[1],
+    valid_mask=[18, 110],
+    predict_mask=[18, 110],   # obs: first 50 timesteps only False. Last 60 timesteps are often either True or False for the entire agent, but some agents have 'True' for the 60:60+X timesteps, and then False for the rest. 
+    id=[18],
+    type=[18],
+    category=[18],
+    position=[18, 110, 3],
+    heading=[18, 110],
+    velocity=[18, 110, 3],
+    target=[18, 60, 4],
+    num_nodes=18
+  },
+  map_polygon={
+    position=[61, 3],
+    orientation=[61],
+    height=[61],
+    type=[61],
+    is_intersection=[61],
+    num_nodes=61
+  },
+  map_point={
+    position=[1349, 3],
+    orientation=[1349],
+    magnitude=[1349],
+    height=[1349],
+    type=[1349],
+    side=[1349],
+    num_nodes=1349
+  },
+  (map_point, to, map_polygon)={ edge_index=[2, 1349] },
+  (map_polygon, to, map_polygon)={
+    edge_index=[2, 156],
+    type=[156]
+  }
+)
